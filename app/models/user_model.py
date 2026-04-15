@@ -1,16 +1,39 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+import uuid
+from sqlalchemy import Column, String, Boolean, DateTime, Date, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # Core Identity
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True,index=True, nullable=False)
     phone = Column(String, unique=True, nullable=True)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="employee")
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
+
+    # HR Essentials
+    employee_id = Column(String, unique=True, index=True, nullable=True) # Set to nullable=True for existing users
+    designation = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    date_of_joining = Column(Date, nullable=True)
+    
+    # Personal Details
+    gender = Column(String, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    blood_group = Column(String, nullable=True)
+    emergency_contact = Column(String, nullable=True)
+
+    # Status
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at= Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    statutory_details = relationship("EmployeeStatutory", back_populates="user", uselist=False)
+    organization = relationship("Organization", back_populates="users")

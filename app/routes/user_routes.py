@@ -1,13 +1,14 @@
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user_schema import CreateUser, UserResponse
+from app.schemas.user_schema import CreateUser, UserResponse, UserDetailResponse
 from app.controllers import user_controller
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 # -------- Create User --------
-@router.post("/", response_model=UserResponse)
+@router.post("/", response_model=UserDetailResponse)
 def create_user(user: CreateUser, db: Session = Depends(get_db)):
     try:
         return user_controller.create_user(db, user)
@@ -17,27 +18,16 @@ def create_user(user: CreateUser, db: Session = Depends(get_db)):
 
 # -------- Get All Users --------
 @router.get("/", response_model=list[UserResponse])
-def get_users(db: Session = Depends(get_db)):
-    return user_controller.get_users(db)
+def get_users(organization_id: UUID, skip: int = 0, limit: int = 100, search: str = None, db: Session = Depends(get_db)):
+    return user_controller.get_users(db, organization_id, skip, limit, search)
 
 
 # -------- Get User By ID --------
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = user_controller.get_user_by_id(db, user_id)
+@router.get("/{user_id}", response_model=UserDetailResponse)
+def get_user(user_id: UUID, organization_id: UUID, db: Session = Depends(get_db)):
+    user = user_controller.get_user_by_id(db, user_id, organization_id)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     return user
-
-
-# -------- Deactivate User --------
-@router.patch("/{user_id}/deactivate")
-def deactivate_user(user_id: int, db: Session = Depends(get_db)):
-    user = user_controller.deactivate_user(db, user_id)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return {"message": "User deactivated"}
