@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
+import mailtrap as mt
 
 from app.core.config import settings
 from app.db.session import get_db
@@ -14,19 +14,6 @@ from app.schemas.auth_schema import TokenData
 
 # OAuth2 settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-# Mail configuration
-conf = ConnectionConfig(
-    MAIL_USERNAME=settings.MAIL_USERNAME,
-    MAIL_PASSWORD=settings.MAIL_PASSWORD,
-    MAIL_FROM=settings.MAIL_FROM,
-    MAIL_PORT=settings.MAIL_PORT,
-    MAIL_SERVER=settings.MAIL_SERVER,
-    MAIL_STARTTLS=settings.MAIL_STARTTLS,
-    MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
-    USE_CREDENTIALS=settings.USE_CREDENTIALS,
-    VALIDATE_CERTS=settings.VALIDATE_CERTS
-)
 
 # -------- JWT Logic --------
 
@@ -68,50 +55,52 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
 
 # -------- Email Logic --------
 
-async def send_email(subject: str, recipient: str, body: str):
+async def send_email_from_template(template_id: str, recipient: str, variables: dict):
     # If mail settings are missing or default, log instead of failing in dev
-    if not settings.MAIL_SERVER or settings.MAIL_SERVER in ["None", "smtp.example.com"] or not settings.MAIL_USERNAME or settings.MAIL_USERNAME == "placeholder@example.com":
-        print(f"DEBUG EMAIL: To: {recipient} | Subject: {subject}")
+    if not settings.MAILTRAP_TOKEN or not template_id:
+        print(f"DEBUG EMAIL [Template: {template_id}]: To: {recipient} | Vars: {variables}")
         return
 
     try:
-        message = MessageSchema(
-            subject=subject,
-            recipients=[recipient],
-            body=body,
-            subtype=MessageType.html
+        mail = mt.MailFromTemplate(
+            sender=mt.Address(email=settings.MAIL_FROM, name=settings.COMPANY_NAME),
+            to=[mt.Address(email=recipient)],
+            template_uuid=template_id,
+            template_variables={
+                **variables,
+                "company_name": settings.COMPANY_NAME,
+                "support_email": settings.SUPPORT_EMAIL,
+                "user_email": recipient
+            }
         )
 
-        fm = FastMail(conf)
-        await fm.send_message(message)
+        client = mt.MailtrapClient(token=settings.MAILTRAP_TOKEN)
+        client.send(mail)
     except Exception as e:
-        print(f"ERROR SENDING EMAIL: {e}")
+        print(f"ERROR SENDING EMAIL (Mailtrap Template): {e}")
 
 async def send_verification_email(email: str, token: str):
     link = f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
-    body = f"""
-    <h1>Verify your email</h1>
-    <p>Thank you for registering. Please click the link below to verify your account:</p>
-    <p><a href="{link}">{link}</a></p>
-    """
-    await send_email("Verify your email", email, body)
+    await send_email_from_template(
+        template_id=settings.MAILTRAP_VERIFY_TEMPLATE_ID,
+        recipient=email,
+        variables={"link": link}
+    )
 
 async def send_reset_password_email(email: str, token: str):
     link = f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
-    body = f"""
-    <h1>Reset your password</h1>
-    <p>You requested a password reset. Please click the link below to set a new password:</p>
-    <p><a href="{link}">{link}</a></p>
-    """
-    await send_email("Reset your password", email, body)
+    await send_email_from_template(
+        template_id=settings.MAILTRAP_RESET_TEMPLATE_ID,
+        recipient=email,
+        variables={"link": link}
+    )
 
 async def send_invitation_email(email: str, token: str, inviter_name: str = "Administrator"):
-    body = f"""
-    <h1>Welcome to Team Portal!</h1>
-    <p>Hello,</p>
-    <p><strong>{inviter_name}</strong> has invited you to join their organization on Team Portal.</p>
-    <p>Please use the following token to set your password and complete your registration:</p>
-    <p><strong>{token}</strong></p>
-    <p>If you did not expect this invitation, you can safely ignore this email.</p>
-    """
-    await send_email("You've been invited to Team Portal!", email, body)
+    await send_email_from_template(
+        template_id=settings.MAILTRAP_INVITE_TEMPLATE_ID,
+        recipient=email,
+        variables={
+            "inviter_name": inviter_name,
+            "token": token
+        }
+    )
