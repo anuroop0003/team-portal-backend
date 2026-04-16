@@ -9,9 +9,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 # -------- Create User --------
 @router.post("/", response_model=UserDetailResponse)
-def create_user(user: CreateUser, db: Session = Depends(get_db)):
+async def create_user(user: CreateUser, db: Session = Depends(get_db)):
     try:
-        return user_controller.create_user(db, user)
+        return await user_controller.create_user(db, user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

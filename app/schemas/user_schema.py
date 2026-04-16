@@ -8,7 +8,7 @@ class CreateUser(BaseModel):
     name:str
     email:EmailStr
     phone:Optional[str] = None
-    password: str
+    password: Optional[str] = None
     role:Optional[str] = "employee"
     organization_id: UUID
     

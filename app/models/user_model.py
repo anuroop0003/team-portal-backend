@@ -31,6 +31,9 @@ class User(Base):
 
     # Status
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    verification_token = Column(String, nullable=True)
+    reset_token = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at= Column(DateTime(timezone=True), onupdate=func.now())
 

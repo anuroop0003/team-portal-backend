@@ -14,11 +14,11 @@ def list_admins(organization_id: UUID, skip: int = 0, limit: int = 100, search: 
 
 # -------- Create Admin --------
 @router.post("/", response_model=UserDetailResponse)
-def create_admin(admin: CreateUser, db: Session = Depends(get_db)):
+async def create_admin(admin: CreateUser, db: Session = Depends(get_db)):
     try:
         # Override role to admin
         admin.role = "admin"
-        return user_controller.create_user(db, admin)
+        return await user_controller.create_user(db, admin)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

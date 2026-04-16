@@ -1,8 +1,9 @@
 from fastapi import FastAPI
-from app.routes import user_routes, admin_routes, organization_routes, audit_routes
+from app.routes import user_routes, admin_routes, organization_routes, audit_routes, auth_routes
 
 app = FastAPI()
 
+app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(organization_routes.router)

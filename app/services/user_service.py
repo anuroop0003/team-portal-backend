@@ -5,17 +5,19 @@ from app.models.user_model import User
 from app.models.statutory_model import EmployeeStatutory
 from app.models.organization_model import Organization
 from app.models.audit_model import AuditLog
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import secrets
+import string
+import uuid
+from uuid import UUID
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.models.user_model import User
+from app.models.statutory_model import EmployeeStatutory
+from app.models.organization_model import Organization
+from app.models.audit_model import AuditLog
+from app.core.security import hash_password
 
 # -------- Helpers --------
-def hash_password(password:str):
-    return pwd_context.hash(password)
-
-def verify_password(plain, hashed):
-    return pwd_context.verify(plain, hashed)
-
 def log_audit(db: Session, organization_id: UUID, action: str, target_id: UUID = None, changes: dict = None, actor_id: UUID = None):
     log = AuditLog(
         organization_id=organization_id,
@@ -25,7 +27,6 @@ def log_audit(db: Session, organization_id: UUID, action: str, target_id: UUID =
         changes=changes
     )
     db.add(log)
-    # Note: We don't commit here, it will be committed by the calling service function with the main transaction.
 
 # -------- Create User --------
 def create_user(db:Session, user_data):
@@ -33,14 +34,24 @@ def create_user(db:Session, user_data):
     if(existing):
         raise Exception("User already exists")
 
-    # Fetch Organization for initial
+    # Fetch Organization
     org = db.query(Organization).filter(Organization.id == user_data.organization_id).first()
     if not org:
         raise Exception("Organization not found")
 
-    # Generate Employee ID: {ORG_INITIAL}-{Sequence} (e.g., TP-0001)
+    # Generate Employee ID
     user_count = db.query(func.count(User.id)).filter(User.organization_id == user_data.organization_id).scalar()
     employee_id = f"{org.initial}-{user_count + 1:04d}"
+
+    # Handle Invitation Flow
+    password = user_data.password
+    reset_token = None
+    if not password:
+        # Generate random 16 character strong password
+        alphabet = string.ascii_letters + string.digits + string.punctuation
+        password = ''.join(secrets.choice(alphabet) for i in range(16))
+        # Generate reset token for invitation
+        reset_token = str(uuid.uuid4())
 
     new_user = User(
         name=user_data.name,
@@ -48,8 +59,9 @@ def create_user(db:Session, user_data):
         phone=user_data.phone,
         role=user_data.role,
         organization_id=user_data.organization_id,
-        hashed_password=hash_password(user_data.password),
+        hashed_password=hash_password(password),
         employee_id=employee_id,
+        reset_token=reset_token,
         # HR Identity
         designation=user_data.designation,
         department=user_data.department,
@@ -61,7 +73,7 @@ def create_user(db:Session, user_data):
     )
 
     db.add(new_user)
-    db.flush() # Get user ID for statutory relationship
+    db.flush() 
 
     # Create empty Statutory Record
     new_statutory = EmployeeStatutory(user_id=new_user.id)
