@@ -5,9 +5,11 @@ from datetime import datetime
 
 class OrganizationBase(BaseModel):
     name: str
-    full_name: Optional[str] = None
-    initial: str
+    code: str
     logo_url: Optional[str] = None
+    website_url: Optional[str] = None
+    industry: Optional[str] = None
+    company_size: Optional[str] = None
 
 class OrganizationCreate(OrganizationBase):
     pass

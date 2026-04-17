@@ -10,7 +10,7 @@ class Settings:
     # JWT Settings
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
     
     # Mail Settings
     MAILTRAP_TOKEN = os.getenv("MAILTRAP_TOKEN")

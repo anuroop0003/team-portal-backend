@@ -1,16 +1,9 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models.user_model import User
-from app.models.statutory_model import EmployeeStatutory
-from app.models.organization_model import Organization
-from app.models.audit_model import AuditLog
 import secrets
 import string
 import uuid
-from uuid import UUID
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from app.models.user_model import User
 from app.models.statutory_model import EmployeeStatutory
 from app.models.organization_model import Organization
@@ -41,7 +34,7 @@ def create_user(db:Session, user_data):
 
     # Generate Employee ID
     user_count = db.query(func.count(User.id)).filter(User.organization_id == user_data.organization_id).scalar()
-    employee_id = f"{org.initial}-{user_count + 1:04d}"
+    employee_id = f"{org.code}-{user_count + 1:04d}"
 
     # Handle Invitation Flow
     password = user_data.password
@@ -82,7 +75,7 @@ def create_user(db:Session, user_data):
     # Audit Log
     log_audit(db, new_user.organization_id, "CREATE_USER", target_id=new_user.id)
     
-    db.commit()
+    db.flush() # Changed from commit to flush for atomic operations
     db.refresh(new_user)
 
     return new_user

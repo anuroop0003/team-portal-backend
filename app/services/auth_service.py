@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 import mailtrap as mt
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.db.session import get_db
@@ -75,7 +76,7 @@ async def send_email_from_template(template_id: str, recipient: str, variables: 
         )
 
         client = mt.MailtrapClient(token=settings.MAILTRAP_TOKEN)
-        client.send(mail)
+        await run_in_threadpool(client.send, mail)
     except Exception as e:
         print(f"ERROR SENDING EMAIL (Mailtrap Template): {e}")
 

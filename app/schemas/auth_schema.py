@@ -14,20 +14,25 @@ class SignInRequest(BaseModel):
     email: EmailStr
     password: str
 
-class AdminSignUp(BaseModel):
+class AdminRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
+    phone: str
+    job_title: str
 
-class OrganizationSignUp(BaseModel):
+class OrganizationRegister(BaseModel):
     name: str
-    initial: str
-    full_name: Optional[str] = None
+    code: str
     logo_url: Optional[str] = None
+    website_url: Optional[str] = None
+    industry: Optional[str] = None
+    company_size: Optional[str] = None
 
-class OrganizationSignUpRequest(BaseModel):
-    organization: OrganizationSignUp
-    admin: AdminSignUp
+class OrganizationRegisterRequest(BaseModel):
+    organization: OrganizationRegister
+    admin: AdminRegister
+    accept_terms: bool
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

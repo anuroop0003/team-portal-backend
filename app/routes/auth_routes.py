@@ -5,42 +5,62 @@ from app.db.session import get_db
 from app.models.user_model import User
 from app.services import auth_service, user_service, organization_service
 from app.schemas.auth_schema import (
-    SignInRequest, Token, OrganizationSignUpRequest, ForgotPasswordRequest, 
+    SignInRequest, Token, OrganizationRegisterRequest, ForgotPasswordRequest, 
     ResetPasswordRequest, AuthMeResponse
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@router.post("/register-organization", response_model=AuthMeResponse, summary="Enterprise Sign-Up (New Organization)")
-async def sign_up(payload: OrganizationSignUpRequest, db: Session = Depends(get_db)):
+@router.post("/register-organization", response_model=AuthMeResponse, summary="Enterprise Register Organization")
+async def register_organization(payload: OrganizationRegisterRequest, db: Session = Depends(get_db)):
+    # 1. Validation
+    if not payload.accept_terms:
+        raise HTTPException(status_code=400, detail="You must accept the terms and conditions")
+    
+    # Check email uniqueness
+    existing_user = db.query(User).filter(User.email == payload.admin.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     try:
-        # 1. Create Organization
-        org = organization_service.create_organization(db, payload.organization)
+        from app.utils.slugify import generate_unique_slug
+        from app.models.user_model import Membership
         
-        # 2. Create Admin User
-        # We need to adapt the payload for create_user
-        user_data = payload.admin
-        # Add necessary fields for user_service.create_user
-        user_data_dict = user_data.model_dump()
-        user_data_dict["role"] = "admin"
-        user_data_dict["organization_id"] = org.id
-        # We also need other fields from CreateUser but can set defaults
-        # For simplicity, we'll manually create the user here or mock the object
+        # 2. Generate Slug
+        slug = generate_unique_slug(db, payload.organization.name)
+        
+        # 3. Create Organization (Atomic)
+        org = organization_service.create_organization(db, payload.organization, slug)
+        
+        # 4. Create Admin User
         from app.schemas.user_schema import CreateUser
         user_create_data = CreateUser(
-            name=user_data.name,
-            email=user_data.email,
-            password=user_data.password,
-            role="admin",
+            name=payload.admin.name,
+            email=payload.admin.email,
+            password=payload.admin.password,
+            phone=payload.admin.phone,
+            designation=payload.admin.job_title,
+            role="OWNER", # SaaS Standard
             organization_id=org.id
         )
         
         user = user_service.create_user(db, user_create_data)
         
-        # 3. Generate verification token and send email
+        # 5. Create Membership Record
+        membership = Membership(
+            user_id=user.id,
+            organization_id=org.id,
+            role="OWNER"
+        )
+        db.add(membership)
+        
+        # 6. Verification Token
         verification_token = str(uuid.uuid4())
         user.verification_token = verification_token
+        
+        # FINAL COMMIT (Atomic)
         db.commit()
+        db.refresh(user)
         
         await auth_service.send_verification_email(user.email, verification_token)
         
@@ -50,7 +70,7 @@ async def sign_up(payload: OrganizationSignUpRequest, db: Session = Depends(get_
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/sign-in", response_model=Token)
-async def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
+def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user or not user_service.verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
@@ -68,7 +88,7 @@ async def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/verify-email")
-async def verify_email(token: str, db: Session = Depends(get_db)):
+def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired verification token")
@@ -91,7 +111,7 @@ async def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(
     return {"message": "If an account with that email exists, we sent a reset link."}
 
 @router.post("/reset-password")
-async def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == payload.token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
@@ -102,5 +122,5 @@ async def reset_password(payload: ResetPasswordRequest, db: Session = Depends(ge
     return {"message": "Password reset successfully"}
 
 @router.get("/me", response_model=AuthMeResponse)
-async def get_me(current_user: User = Depends(auth_service.get_current_active_user)):
+def get_me(current_user: User = Depends(auth_service.get_current_active_user)):
     return current_user

@@ -40,3 +40,21 @@ class User(Base):
     # Relationships
     statutory_details = relationship("EmployeeStatutory", back_populates="user", uselist=False)
     organization = relationship("Organization", back_populates="users")
+    memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan")
+
+class Membership(Base):
+    __tablename__ = "memberships"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False, default="employee") # e.g., 'OWNER', 'ADMIN', 'EMPLOYEE'
+    is_active = Column(Boolean, default=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="memberships")
+    organization = relationship("Organization", backref="memberships")

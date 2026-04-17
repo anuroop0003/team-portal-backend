@@ -2,20 +2,22 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.organization_model import Organization
 
-def create_organization(db: Session, org_data):
-    existing = db.query(Organization).filter(Organization.initial == org_data.initial).first()
-    if existing:
-        raise Exception("Organization with this initial already exists")
+def create_organization(db: Session, org_data, slug: str):
+    existing_code = db.query(Organization).filter(Organization.code == org_data.code).first()
+    if existing_code:
+        raise Exception("Organization with this code already exists")
     
     new_org = Organization(
         name=org_data.name,
-        full_name=org_data.full_name,
-        initial=org_data.initial.upper(),
-        logo_url=org_data.logo_url
+        code=org_data.code.upper(),
+        slug=slug,
+        logo_url=org_data.logo_url,
+        website_url=org_data.website_url,
+        industry=org_data.industry,
+        company_size=org_data.company_size
     )
     db.add(new_org)
-    db.commit()
-    db.refresh(new_org)
+    db.flush() # Use flush instead of commit to keep transaction open
     return new_org
 
 def get_organizations(db: Session):
