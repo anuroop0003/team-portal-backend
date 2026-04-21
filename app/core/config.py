@@ -23,4 +23,11 @@ class Settings:
     COMPANY_NAME = os.getenv("COMPANY_NAME")
     SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL")
 
+    # Storage Settings
+    BUCKET_ACCESS_KEY_ID = os.getenv("BUCKET_ACCESS_KEY_ID")
+    BUCKET_SECRET_KEY_ID = os.getenv("BUCKET_SECRET_KEY_ID")
+    BUCKET_ENDPOINT = os.getenv("BUCKET_ENDPOINT")
+    BUCKET_REGION = os.getenv("BUCKET_REGION")
+    BUCKET_NAME = os.getenv("BUCKET_NAME")
+
 settings = Settings()

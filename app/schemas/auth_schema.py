@@ -18,12 +18,12 @@ class AdminRegister(BaseModel):
     name: str
     email: EmailStr
     password: str
-    phone: str
-    job_title: str
+    phone: Optional[str] = None
+    job_title: Optional[str] = None
 
 class OrganizationRegister(BaseModel):
     name: str
-    code: str
+    slug: str
     logo_url: Optional[str] = None
     website_url: Optional[str] = None
     industry: Optional[str] = None
@@ -32,7 +32,6 @@ class OrganizationRegister(BaseModel):
 class OrganizationRegisterRequest(BaseModel):
     organization: OrganizationRegister
     admin: AdminRegister
-    accept_terms: bool
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -40,6 +39,9 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+class SendVerificationRequest(BaseModel):
+    email: EmailStr
 
 class AuthMeResponse(BaseModel):
     id: UUID
@@ -51,3 +53,7 @@ class AuthMeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class VerifyTokenInfoResponse(BaseModel):
+    email: EmailStr
+    is_valid: bool

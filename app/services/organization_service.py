@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from app.models.organization_model import Organization
 
 def create_organization(db: Session, org_data, slug: str):
-    existing_code = db.query(Organization).filter(Organization.code == org_data.code).first()
+    existing_code = db.query(Organization).filter(Organization.code == org_data.slug).first()
     if existing_code:
         raise Exception("Organization with this code already exists")
     
     new_org = Organization(
         name=org_data.name,
-        code=org_data.code.upper(),
+        code=org_data.slug.upper(),
         slug=slug,
         logo_url=org_data.logo_url,
         website_url=org_data.website_url,
