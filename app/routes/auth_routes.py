@@ -8,6 +8,7 @@ from app.schemas.auth_schema import (
     SignInRequest, Token, OrganizationRegisterRequest, ForgotPasswordRequest, 
     ResetPasswordRequest, AuthMeResponse, SendVerificationRequest, VerifyTokenInfoResponse
 )
+from app.core.security import verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -68,7 +69,7 @@ async def register_organization(payload: OrganizationRegisterRequest, db: Sessio
 @router.post("/sign-in", response_model=Token)
 def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
-    if not user or not user_service.verify_password(credentials.password, user.hashed_password):
+    if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "INVALID_CREDENTIALS", "message": "Incorrect email or password"},
