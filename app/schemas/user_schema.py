@@ -10,6 +10,7 @@ class CreateUser(BaseModel):
     designation: str
     password: Optional[str] = None
     phone:Optional[str] = None
+    organization_id: Optional[UUID] = None
 
     # HR Identity Fields (Optional during creation)
     department: Optional[str] = None

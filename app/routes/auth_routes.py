@@ -1,3 +1,4 @@
+from fastapi import Request
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -33,6 +34,7 @@ def get_user_by_reset_token(db: Session, token: str):
 # -----------------------------
 @router.post("/register-organization", response_model=AuthMeResponse)
 async def register_organization(
+    request: Request,
     payload: OrganizationRegisterRequest,
     db: Session = Depends(get_db)
 ):
@@ -51,8 +53,10 @@ async def register_organization(
                 email=payload.admin.email,
                 password=payload.admin.password,
                 phone=payload.admin.phone,
-                designation=payload.admin.job_title
-            )
+                designation=payload.admin.job_title,
+                organization_id=org.id
+            ),
+            ip_address=request.client.host
         )
 
         db.add(Membership(
@@ -75,7 +79,7 @@ async def register_organization(
 # 🔹 Sign In
 # -----------------------------
 @router.post("/sign-in", response_model=Token)
-def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
+def sign_in(request: Request, credentials: SignInRequest, db: Session = Depends(get_db)):
     user = get_user_by_email(db, credentials.email)
 
     if not user or not verify_password(credentials.password, user.hashed_password):
@@ -100,6 +104,8 @@ def sign_in(credentials: SignInRequest, db: Session = Depends(get_db)):
     token = auth_service.create_access_token(
         data={"sub": user.email, "id": str(user.id)}
     )
+
+    user_service.log_audit(db, user.organization_id, "SIGN_IN", actor_id=user.id, ip_address=request.client.host)
 
     return {"access_token": token, "token_type": "bearer"}
 
@@ -183,7 +189,7 @@ async def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(
 # 🔹 Reset Password
 # -----------------------------
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     user = get_user_by_reset_token(db, payload.token)
 
     if not user:
@@ -192,6 +198,8 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     user.hashed_password = user_service.hash_password(payload.new_password)
     user.reset_token = None
     db.commit()
+
+    user_service.log_audit(db, user.organization_id, "RESET_PASSWORD", target_id=user.id, ip_address=request.client.host)
 
     return {"message": "Password reset successfully"}
 
