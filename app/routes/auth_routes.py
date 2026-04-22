@@ -15,7 +15,6 @@ from app.core.security import verify_password
 from app.core.config import settings
 from jose import JWTError, jwt
 
-
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # -----------------------------
@@ -56,14 +55,9 @@ async def register_organization(
                 designation=payload.admin.job_title,
                 organization_id=org.id
             ),
+            role="OWNER",
             ip_address=request.client.host
         )
-
-        db.add(Membership(
-            user_id=user.id,
-            organization_id=org.id,
-            role="OWNER"
-        ))
 
         db.commit()
         db.refresh(user)

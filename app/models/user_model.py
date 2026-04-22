@@ -14,7 +14,6 @@ class User(Base):
     email = Column(String, unique=True,index=True, nullable=False)
     phone = Column(String, unique=True, nullable=True)
     hashed_password = Column(String, nullable=False)
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
     designation = Column(String, nullable=False)
 
     # HR Essentials
@@ -37,6 +36,19 @@ class User(Base):
     # Relationships
     statutory_details = relationship("EmployeeStatutory", back_populates="user", uselist=False)
     memberships = relationship("Membership", back_populates="user", cascade="all, delete-orphan")
+    organizations = relationship("Organization", secondary="memberships", viewonly=True)
+
+    @property
+    def role(self):
+        if self.memberships:
+            return self.memberships[0].role
+        return "EMPLOYEE"
+
+    @property
+    def organization_id(self):
+        if self.memberships:
+            return self.memberships[0].organization_id
+        return None
 
 class Membership(Base):
     __tablename__ = "memberships"
@@ -54,4 +66,4 @@ class Membership(Base):
 
     # Relationships
     user = relationship("User", back_populates="memberships")
-    organization = relationship("Organization", backref="memberships")
+    organization = relationship("Organization", back_populates="memberships")
