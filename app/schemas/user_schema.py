@@ -7,13 +7,12 @@ from datetime import date
 class CreateUser(BaseModel):
     name:str
     email:EmailStr
-    phone:Optional[str] = None
+    designation: str
     password: Optional[str] = None
-    role:Optional[str] = "employee"
-    organization_id: UUID
-    
+    phone:Optional[str] = None
+    organization_id: Optional[UUID] = None
+
     # HR Identity Fields (Optional during creation)
-    designation: Optional[str] = None
     department: Optional[str] = None
     date_of_joining: Optional[date] = None
     gender: Optional[str] = None

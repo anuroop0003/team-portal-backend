@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user_schema import CreateUser, UserDetailResponse, UserUpdate
@@ -14,19 +14,19 @@ def list_admins(organization_id: UUID, skip: int = 0, limit: int = 100, search: 
 
 # -------- Create Admin --------
 @router.post("/", response_model=UserDetailResponse)
-async def create_admin(admin: CreateUser, db: Session = Depends(get_db)):
+async def create_admin(request: Request, admin: CreateUser, db: Session = Depends(get_db)):
     try:
         # Override role to admin
         admin.role = "admin"
-        return await user_controller.create_user(db, admin)
+        return await user_controller.create_user(db, admin, ip_address=request.client.host)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 # -------- Edit Admin/User --------
 @router.put("/{user_id}", response_model=UserDetailResponse)
-def update_user(user_id: UUID, organization_id: UUID, update_data: UserUpdate, db: Session = Depends(get_db)):
+def update_user(request: Request, user_id: UUID, organization_id: UUID, update_data: UserUpdate, db: Session = Depends(get_db)):
     try:
-        return user_controller.update_user(db, user_id, organization_id, update_data.model_dump(exclude_unset=True))
+        return user_controller.update_user(db, user_id, organization_id, update_data.model_dump(exclude_unset=True), ip_address=request.client.host)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -41,9 +41,9 @@ def deactivate_user(user_id: UUID, organization_id: UUID, db: Session = Depends(
 
 # -------- Hard Delete Admin/User --------
 @router.delete("/{user_id}")
-def delete_user(user_id: UUID, organization_id: UUID, db: Session = Depends(get_db)):
+def delete_user(request: Request, user_id: UUID, organization_id: UUID, db: Session = Depends(get_db)):
     try:
-        user_controller.delete_user(db, user_id, organization_id)
+        user_controller.delete_user(db, user_id, organization_id, ip_address=request.client.host)
         return {"message": f"User {user_id} and associated data deleted successfully (Hard Delete)"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -8,10 +8,10 @@ from app.db.database import Base
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    name = Column(String, nullable=False)
+    # Core Identity
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False, unique=True)
     code = Column(String, nullable=False, unique=True) # e.g., 'TP', 'ACME'
-    slug = Column(String, nullable=False, unique=True, index=True) # e.g., 'acme-inc'
     logo_url = Column(String, nullable=True)
     website_url = Column(String, nullable=True)
     industry = Column(String, nullable=True)

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user_schema import CreateUser, UserResponse, UserDetailResponse
@@ -9,9 +9,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 # -------- Create User --------
 @router.post("/", response_model=UserDetailResponse)
-async def create_user(user: CreateUser, db: Session = Depends(get_db)):
+async def create_user(request: Request, user: CreateUser, db: Session = Depends(get_db)):
     try:
-        return await user_controller.create_user(db, user)
+        return await user_controller.create_user(db, user, ip_address=request.client.host)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

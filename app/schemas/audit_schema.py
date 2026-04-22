@@ -8,8 +8,11 @@ class AuditLogResponse(BaseModel):
     organization_id: UUID
     actor_id: Optional[UUID]
     target_id: Optional[UUID]
+
     action: str
     changes: Optional[Any]
+    ip_address: Optional[str]
+
     timestamp: datetime
 
     class Config:

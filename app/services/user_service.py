@@ -11,18 +11,19 @@ from app.models.audit_model import AuditLog
 from app.core.security import hash_password
 
 # -------- Helpers --------
-def log_audit(db: Session, organization_id: UUID, action: str, target_id: UUID = None, changes: dict = None, actor_id: UUID = None):
+def log_audit(db: Session, organization_id: UUID, action: str, target_id: UUID = None, changes: dict = None, actor_id: UUID = None, ip_address: str = None):
     log = AuditLog(
         organization_id=organization_id,
         actor_id=actor_id,
         target_id=target_id,
         action=action,
-        changes=changes
+        changes=changes,
+        ip_address=ip_address
     )
     db.add(log)
 
 # -------- Create User --------
-def create_user(db:Session, user_data):
+def create_user(db:Session, user_data, ip_address: str = None):
     existing = db.query(User).filter(User.email == user_data.email).first()
     if(existing):
         raise Exception("User already exists")
@@ -38,31 +39,28 @@ def create_user(db:Session, user_data):
 
     # Handle Invitation Flow
     password = user_data.password
-    reset_token = None
     if not password:
-        # Generate random 16 character strong password
+        # Generate random 16 character strong password for the DB
         alphabet = string.ascii_letters + string.digits + string.punctuation
         password = ''.join(secrets.choice(alphabet) for i in range(16))
-        # Generate reset token for invitation
-        reset_token = str(uuid.uuid4())
 
     new_user = User(
         name=user_data.name,
         email=user_data.email,
         phone=user_data.phone,
-        role=user_data.role,
-        organization_id=user_data.organization_id,
         hashed_password=hash_password(password),
+        organization_id=org.id,
+
         employee_id=employee_id,
-        reset_token=reset_token,
-        # HR Identity
         designation=user_data.designation,
         department=user_data.department,
         date_of_joining=user_data.date_of_joining,
+
         gender=user_data.gender,
         date_of_birth=user_data.date_of_birth,
         blood_group=user_data.blood_group,
-        emergency_contact=user_data.emergency_contact
+        emergency_contact=user_data.emergency_contact,
+
     )
 
     db.add(new_user)
@@ -73,7 +71,7 @@ def create_user(db:Session, user_data):
     db.add(new_statutory)
     
     # Audit Log
-    log_audit(db, new_user.organization_id, "CREATE_USER", target_id=new_user.id)
+    log_audit(db, new_user.organization_id, "CREATE_USER", target_id=new_user.id, ip_address=ip_address)
     
     db.flush() # Changed from commit to flush for atomic operations
     db.refresh(new_user)
@@ -111,7 +109,7 @@ def deactivate_user(db:Session, user_id:UUID, organization_id: UUID):
     return user
 
 # -------- Update User --------
-def update_user(db:Session, user_id:UUID, organization_id: UUID, update_data:dict):
+def update_user(db:Session, user_id:UUID, organization_id: UUID, update_data:dict, ip_address: str = None):
     user = get_user_by_id(db, user_id, organization_id)
     if not user:
         raise Exception("User not found in this organization")
@@ -131,14 +129,14 @@ def update_user(db:Session, user_id:UUID, organization_id: UUID, update_data:dic
                     setattr(user, key, value)
 
     if audit_changes:
-        log_audit(db, organization_id, "UPDATE_USER", target_id=user.id, changes=audit_changes)
+        log_audit(db, organization_id, "UPDATE_USER", target_id=user.id, changes=audit_changes, ip_address=ip_address)
 
     db.commit()
     db.refresh(user)
     return user
 
 # -------- Hard Delete User --------
-def delete_user(db:Session, user_id:UUID, organization_id: UUID):
+def delete_user(db:Session, user_id:UUID, organization_id: UUID, ip_address: str = None):
     user = get_user_by_id(db, user_id, organization_id)
     if not user:
         raise Exception("User not found in this organization")
@@ -149,7 +147,7 @@ def delete_user(db:Session, user_id:UUID, organization_id: UUID):
         if admin_count <= 1:
             raise Exception("Cannot delete the last administrator")
 
-    log_audit(db, organization_id, "DELETE_USER", target_id=user.id)
+    log_audit(db, organization_id, "DELETE_USER", target_id=user.id, ip_address=ip_address)
     db.delete(user)
     db.commit()
     return True

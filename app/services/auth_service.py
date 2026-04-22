@@ -80,7 +80,13 @@ async def send_email_from_template(template_id: str, recipient: str, variables: 
     except Exception as e:
         print(f"ERROR SENDING EMAIL (Mailtrap Template): {e}")
 
-async def send_verification_email(email: str, token: str):
+async def send_verification_email(email: str):
+    # Create a verification token (valid for 15 minutes)
+    token = create_access_token(
+        data={"sub": email, "type": "verification"},
+        expires_delta=timedelta(minutes=15)
+    )
+    
     link = f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
     await send_email_from_template(
         template_id=settings.MAILTRAP_VERIFY_TEMPLATE_ID,
@@ -96,12 +102,20 @@ async def send_reset_password_email(email: str, token: str):
         variables={"link": link}
     )
 
-async def send_invitation_email(email: str, token: str, inviter_name: str = "Administrator"):
+async def send_invitation_email(email: str, inviter_name: str = "Administrator"):
+    # Create an invitation token (valid for 24 hours)
+    token = create_access_token(
+        data={"sub": email, "type": "invitation"},
+        expires_delta=timedelta(hours=24)
+    )
+    
+    link = f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"
+    
     await send_email_from_template(
         template_id=settings.MAILTRAP_INVITE_TEMPLATE_ID,
         recipient=email,
         variables={
             "inviter_name": inviter_name,
-            "token": token
+            "link": link
         }
     )
