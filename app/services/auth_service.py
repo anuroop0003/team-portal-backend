@@ -5,9 +5,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import mailtrap as mt
-from starlette.concurrency import run_in_threadpool
-
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user_model import User
@@ -54,31 +51,7 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-# -------- Email Logic --------
-
-async def send_email_from_template(template_id: str, recipient: str, variables: dict):
-    # If mail settings are missing or default, log instead of failing in dev
-    if not settings.MAILTRAP_TOKEN or not template_id:
-        print(f"DEBUG EMAIL [Template: {template_id}]: To: {recipient} | Vars: {variables}")
-        return
-
-    try:
-        mail = mt.MailFromTemplate(
-            sender=mt.Address(email=settings.MAIL_FROM, name=settings.COMPANY_NAME),
-            to=[mt.Address(email=recipient)],
-            template_uuid=template_id,
-            template_variables={
-                **variables,
-                "company_name": settings.COMPANY_NAME,
-                "support_email": settings.SUPPORT_EMAIL,
-                "user_email": recipient
-            }
-        )
-
-        client = mt.MailtrapClient(token=settings.MAILTRAP_TOKEN)
-        await run_in_threadpool(client.send, mail)
-    except Exception as e:
-        print(f"ERROR SENDING EMAIL (Mailtrap Template): {e}")
+# -------- Link Generation Logic --------
 
 async def send_verification_email(email: str):
     # Create a verification token (valid for 15 minutes)
@@ -87,20 +60,10 @@ async def send_verification_email(email: str):
         expires_delta=timedelta(minutes=15)
     )
     
-    link = f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
-    await send_email_from_template(
-        template_id=settings.MAILTRAP_VERIFY_TEMPLATE_ID,
-        recipient=email,
-        variables={"link": link}
-    )
+    return f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
 
 async def send_reset_password_email(email: str, token: str):
-    link = f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
-    await send_email_from_template(
-        template_id=settings.MAILTRAP_RESET_TEMPLATE_ID,
-        recipient=email,
-        variables={"link": link}
-    )
+    return f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
 
 async def send_invitation_email(email: str, inviter_name: str = "Administrator"):
     # Create an invitation token (valid for 24 hours)
@@ -109,13 +72,4 @@ async def send_invitation_email(email: str, inviter_name: str = "Administrator")
         expires_delta=timedelta(hours=24)
     )
     
-    link = f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"
-    
-    await send_email_from_template(
-        template_id=settings.MAILTRAP_INVITE_TEMPLATE_ID,
-        recipient=email,
-        variables={
-            "inviter_name": inviter_name,
-            "link": link
-        }
-    )
+    return f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"

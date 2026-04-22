@@ -5,9 +5,7 @@ SQLAlchemy==2.0.49
 alembic==1.18.4
 psycopg2-binary==2.9.11
 python-dotenv==1.2.2
-passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
-mailtrap==2.0.0
 aioboto3==13.2.0
 python-multipart==0.0.26
-bcrypt==3.2.2
+bcrypt==4.3.0

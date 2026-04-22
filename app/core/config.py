@@ -12,13 +12,6 @@ class Settings:
     ALGORITHM = os.getenv("ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
     
-    # Mail Settings
-    MAILTRAP_TOKEN = os.getenv("MAILTRAP_TOKEN")
-    MAIL_FROM = os.getenv("MAIL_FROM")
-    MAILTRAP_VERIFY_TEMPLATE_ID = os.getenv("MAILTRAP_VERIFY_TEMPLATE_ID")
-    MAILTRAP_RESET_TEMPLATE_ID = os.getenv("MAILTRAP_RESET_TEMPLATE_ID")
-    MAILTRAP_INVITE_TEMPLATE_ID = os.getenv("MAILTRAP_INVITE_TEMPLATE_ID")
-    
     # Branded Content
     COMPANY_NAME = os.getenv("COMPANY_NAME")
     SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL")
