@@ -8,7 +8,7 @@ class EmployeeStatutory(Base):
     __tablename__ = "employee_statutory"
 
     # Core Identity
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     
     # Financial/Statutory PII

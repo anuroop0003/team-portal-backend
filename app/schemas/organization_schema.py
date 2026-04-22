@@ -1,11 +1,11 @@
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 class OrganizationBase(BaseModel):
     name: str
-    code: str
+    code: str = Field(..., validation_alias="code")
     logo_url: Optional[str] = None
     website_url: Optional[str] = None
     industry: Optional[str] = None

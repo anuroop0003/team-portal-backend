@@ -23,7 +23,7 @@ class AdminRegister(BaseModel):
 
 class OrganizationRegister(BaseModel):
     name: str
-    slug: str
+    code: str
     logo_url: Optional[str] = None
     website_url: Optional[str] = None
     industry: Optional[str] = None
