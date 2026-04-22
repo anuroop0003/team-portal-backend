@@ -7,7 +7,7 @@ from datetime import date
 class CreateUser(BaseModel):
     name:str
     email:EmailStr
-    designation: str
+    designation: Optional[str] = None
     password: Optional[str] = None
     phone:Optional[str] = None
     organization_id: Optional[UUID] = None

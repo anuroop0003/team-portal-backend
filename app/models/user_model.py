@@ -14,7 +14,7 @@ class User(Base):
     email = Column(String, unique=True,index=True, nullable=False)
     phone = Column(String, unique=True, nullable=True)
     hashed_password = Column(String, nullable=False)
-    designation = Column(String, nullable=False)
+    designation = Column(String, nullable=True)
 
     # HR Essentials
     employee_id = Column(String, unique=True, index=True, nullable=True) # Set to nullable=True for existing users
