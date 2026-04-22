@@ -5,11 +5,10 @@ from app.services import user_service, auth_service
 async def create_user(db: Session, user_data, ip_address: str = None):
     user = user_service.create_user(db, user_data, ip_address=ip_address)
     
-    # If the user was invited (no password provided), trigger onboarding email
+    # If the user was invited (no password provided), generate onboarding link
     if not user_data.password:
-        # We can trigger this as a background task in the route, 
-        # but for now we'll await it here for simplicity.
-        await auth_service.send_invitation_email(user.email)
+        link = await auth_service.send_invitation_email(user.email)
+        user.invitation_link = link
     
     return user
 

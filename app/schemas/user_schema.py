@@ -56,6 +56,7 @@ class UserResponse(BaseModel):
     date_of_birth: Optional[date]
     blood_group: Optional[str]
     emergency_contact: Optional[str]
+    invitation_link: Optional[str] = None
 
     class Config:
         from_attributes = True

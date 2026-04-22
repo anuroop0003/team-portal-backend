@@ -63,6 +63,10 @@ async def register_organization(
         db.commit()
         db.refresh(user)
 
+        # Generate verification link
+        link = await auth_service.send_verification_email(user.email)
+        user.verification_link = link
+
         return user
 
     except Exception as e:
@@ -161,9 +165,8 @@ async def send_verification(payload: SendVerificationRequest, db: Session = Depe
     if user.is_verified:
         return {"message": "Email is already verified"}
 
-    await auth_service.send_verification_email(user.email)
-
-    return {"message": "Verification email sent"}
+    link = await auth_service.send_verification_email(user.email)
+    return {"message": "Verification link generated", "link": link}
 
 
 # -----------------------------
@@ -176,7 +179,8 @@ async def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(
     if user:
         user.reset_token = str(uuid.uuid4())
         db.commit()
-        await auth_service.send_reset_password_email(user.email, user.reset_token)
+        link = await auth_service.send_reset_password_email(user.email, user.reset_token)
+        return {"message": "Reset link generated", "link": link}
 
     return {"message": "If an account exists, a reset link was sent"}
 

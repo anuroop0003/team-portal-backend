@@ -50,6 +50,7 @@ class AuthMeResponse(BaseModel):
     role: str
     organization_id: Optional[UUID] = None
     is_verified: bool
+    verification_link: Optional[str] = None
 
     class Config:
         from_attributes = True
