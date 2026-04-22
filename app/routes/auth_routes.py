@@ -1,5 +1,6 @@
 from fastapi import Request
 import uuid
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -65,8 +66,9 @@ async def register_organization(
         return user
 
     except Exception as e:
+        logging.error(e)
         db.rollback()
-        raise HTTPException(status_code=400, detail="Registration failed")
+        raise HTTPException(status_code=400, detail=f"Registration failed: {e}")
 
 
 # -----------------------------
