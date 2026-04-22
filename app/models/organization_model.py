@@ -23,4 +23,5 @@ class Organization(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    users = relationship("User", back_populates="organization")
+    memberships = relationship("Membership", back_populates="organization", cascade="all, delete-orphan")
+    users = relationship("User", secondary="memberships", viewonly=True)
