@@ -15,24 +15,34 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # -------- JWT Logic --------
 
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         email: str = payload.get("sub")
         user_id: str = payload.get("id")
         if email is None or user_id is None:
@@ -40,36 +50,39 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         token_data = TokenData(email=email, user_id=uuid.UUID(user_id))
     except (JWTError, ValueError):
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.id == token_data.user_id).first()
     if user is None:
         raise credentials_exception
     return user
+
 
 def get_current_active_user(current_user: User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+
 # -------- Link Generation Logic --------
+
 
 async def send_verification_email(email: str):
     # Create a verification token (valid for 15 minutes)
     token = create_access_token(
-        data={"sub": email, "type": "verification"},
-        expires_delta=timedelta(minutes=15)
+        data={"sub": email, "type": "verification"}, expires_delta=timedelta(minutes=15)
     )
-    
+
     return f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
+
 
 async def send_reset_password_email(email: str, token: str):
     return f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
 
+
 async def send_invitation_email(email: str, inviter_name: str = "Administrator"):
     # Create an invitation token (valid for 24 hours)
     token = create_access_token(
-        data={"sub": email, "type": "invitation"},
-        expires_delta=timedelta(hours=24)
+        data={"sub": email, "type": "invitation"}, expires_delta=timedelta(hours=24)
     )
-    
+
     return f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"

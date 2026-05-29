@@ -19,7 +19,7 @@
 
 4. **Run Application:**
    ```bash
-   uvicorn main:app --reload
+   uvicorn app.main:app --reload
    ```
 
 ## Documentation

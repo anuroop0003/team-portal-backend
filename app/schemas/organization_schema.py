@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
+
 class OrganizationBase(BaseModel):
     name: str
     code: str = Field(..., validation_alias="code")
@@ -11,8 +12,10 @@ class OrganizationBase(BaseModel):
     industry: Optional[str] = None
     company_size: Optional[str] = None
 
+
 class OrganizationCreate(OrganizationBase):
     pass
+
 
 class OrganizationResponse(OrganizationBase):
     id: UUID

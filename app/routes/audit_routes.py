@@ -8,13 +8,14 @@ from app.schemas.audit_schema import AuditLogResponse
 
 router = APIRouter(prefix="/audit-logs", tags=["Audit & Compliance"])
 
+
 @router.get("/", response_model=list[AuditLogResponse])
 def get_audit_logs(
-    organization_id: UUID, 
-    target_id: Optional[UUID] = None, 
-    skip: int = 0, 
-    limit: int = 100, 
-    db: Session = Depends(get_db)
+    organization_id: UUID,
+    target_id: Optional[UUID] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
 ):
     query = db.query(AuditLog).filter(AuditLog.organization_id == organization_id)
     if target_id:
