@@ -15,9 +15,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
-# for 'autogenerate' support
-from app.db.database import Base
-import app.models # Register all models with Base.metadata
+from src.database import Base
+import src.models # Register all models with Base.metadata
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

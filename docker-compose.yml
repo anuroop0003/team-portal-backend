@@ -58,7 +58,7 @@ services:
     command: >
       sh -c "
       alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir app
+      uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir src
       "
 
 networks:
