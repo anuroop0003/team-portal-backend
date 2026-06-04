@@ -41,3 +41,13 @@ class FileTooLargeError(APIException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=detail,
         )
+
+
+class InvalidUploadTypeError(APIException):
+    """Exception raised when an invalid upload type prefix is requested."""
+
+    def __init__(self, detail: str = constants.ERR_INVALID_UPLOAD_TYPE):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        )
