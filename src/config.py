@@ -24,5 +24,12 @@ class Settings:
     BUCKET_REGION = os.getenv("BUCKET_REGION")
     BUCKET_NAME = os.getenv("BUCKET_NAME")
 
+    # SMTP Settings
+    SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_SENDER_EMAIL = os.getenv("SMTP_SENDER_EMAIL")
+    SMTP_APP_PASSWORD = os.getenv("SMTP_APP_PASSWORD")
+    SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Team Portal")
+
 
 settings = Settings()

@@ -13,11 +13,12 @@ from src.auth.utils import verify_password, hash_password, create_access_token
 from src.auth import constants
 from src.auth import exceptions as auth_exceptions
 from src.exceptions import APIException
+from src.mail import service as mail_service
 
 
 async def send_verification_email(email: str):
     """
-    Generates a verification link containing a JWT verification token.
+    Generates a verification link and sends verification email.
 
     Args:
         email (str): The email address to verify.
@@ -31,12 +32,14 @@ async def send_verification_email(email: str):
         expires_delta=timedelta(minutes=constants.VERIFICATION_TOKEN_EXPIRE_MINUTES),
     )
 
-    return f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
+    link = f"{settings.FRONTEND_URL}/auth/verify-email?token={token}"
+    await mail_service.send_verification_mail(email, link)
+    return link
 
 
 async def send_reset_password_email(email: str, token: str):
     """
-    Generates a password reset URL using a reset token.
+    Generates a password reset URL and sends the password reset email.
 
     Args:
         email (str): The recipient user's email.
@@ -46,14 +49,16 @@ async def send_reset_password_email(email: str, token: str):
         str: The password reset URL.
     """
 
-    return f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
+    link = f"{settings.FRONTEND_URL}/auth/reset-password?token={token}"
+    await mail_service.send_password_reset_mail(email, link)
+    return link
 
 
 async def send_invitation_email(
     email: str, inviter_name: str = constants.DEFAULT_INVITER_NAME
 ):
     """
-    Generates an invitation link for user onboarding.
+    Generates an invitation link and sends the invitation email.
 
     Args:
         email (str): The email address of the invited user.
@@ -68,7 +73,9 @@ async def send_invitation_email(
         expires_delta=timedelta(hours=constants.INVITATION_TOKEN_EXPIRE_HOURS),
     )
 
-    return f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"
+    link = f"{settings.FRONTEND_URL}/auth/onboarding?token={token}"
+    await mail_service.send_invitation_mail(email, link)
+    return link
 
 
 async def register_organization_workflow(
