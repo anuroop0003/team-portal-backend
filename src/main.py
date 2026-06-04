@@ -5,7 +5,7 @@ from src.auth.router import router as auth_router
 from src.users.router import user_router, admin_router
 from src.organizations.router import router as organization_router
 from src.audit.router import router as audit_router
-from src.aws.router import router as storage_router
+from src.storage.router import router as storage_router
 from src.config import settings
 from src.exceptions import APIException
 

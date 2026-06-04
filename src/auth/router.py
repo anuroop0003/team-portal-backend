@@ -1,5 +1,6 @@
 from fastapi import Request
 from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.users.models import User
@@ -46,19 +47,23 @@ async def register_organization(
 
 @router.post("/sign-in", response_model=Token, dependencies=[Depends(audit_logger)])
 def sign_in(
-    request: Request, credentials: SignInRequest, db: Session = Depends(get_db)
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
 ):
     """
     Authenticate user credentials and return an access token.
 
     Args:
         request (Request): The incoming request to extract client IP and set audit event.
-        credentials (SignInRequest): The user's email and password.
+        form_data (OAuth2PasswordRequestForm): The form data containing username/email and password.
         db (Session): The database session dependency.
 
     Returns:
         Token: The JWT access token and token type.
     """
+
+    credentials = SignInRequest(email=form_data.username, password=form_data.password)
 
     res, user = auth_service.authenticate_user(
         db, credentials, ip_address=request.client.host
