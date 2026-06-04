@@ -5,8 +5,8 @@ SQLAlchemy
 alembic
 psycopg2-binary
 python-dotenv
-python-jose[cryptography]
-aioboto3
+pyjwt
+boto3
 python-multipart
-bcrypt
+pwdlib[argon2]
 black

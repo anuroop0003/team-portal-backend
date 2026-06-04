@@ -1,40 +1,41 @@
+# services:
+#   postgres:
+#     image: postgres:16
+#     container_name: team_portal_postgres
+#     restart: always
+#     environment:
+#       POSTGRES_USER: admin
+#       POSTGRES_PASSWORD: password
+#       POSTGRES_DB: fastapi_db
+#     ports:
+#       - "5433:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - team_portal_network
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U admin -d fastapi_db"]
+#       interval: 5s
+#       timeout: 5s
+#       retries: 5
+# 
+#   pgadmin:
+#     image: dpage/pgadmin4
+#     container_name: team_portal_pgadmin
+#     restart: always
+#     environment:
+#       PGADMIN_DEFAULT_EMAIL: admin@example.com
+#       PGADMIN_DEFAULT_PASSWORD: admin123
+#     ports:
+#       - "5051:80"
+#     depends_on:
+#       - postgres
+#     volumes:
+#       - pgadmin_data:/var/lib/pgadmin
+#     networks:
+#       - team_portal_network
+
 services:
-  postgres:
-    image: postgres:16
-    container_name: team_portal_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: fastapi_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - team_portal_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d fastapi_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: team_portal_pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-    ports:
-      - "5051:80"
-    depends_on:
-      - postgres
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - team_portal_network
-
   api:
     build:
       context: .
@@ -47,10 +48,10 @@ services:
       - .env
     environment:
       - WATCHFILES_FORCE_POLLING=true
-      - DATABASE_URL=postgresql://admin:password@postgres:5432/fastapi_db
-    depends_on:
-      postgres:
-        condition: service_healthy
+      # - DATABASE_URL=postgresql://admin:password@postgres:5432/fastapi_db
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
     volumes:
       - .:/app
     networks:
@@ -58,13 +59,13 @@ services:
     command: >
       sh -c "
       alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir app
+      uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir src
       "
 
 networks:
   team_portal_network:
     driver: bridge
 
-volumes:
-  postgres_data:
-  pgadmin_data:
+# volumes:
+#   postgres_data:
+#   pgadmin_data:
